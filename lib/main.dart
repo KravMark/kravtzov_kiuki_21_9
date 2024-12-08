@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'widgets/students.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: StudentsScreen(),
+      home: const StudentsScreen(),
     );
   }
 }
