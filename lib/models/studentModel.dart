@@ -1,4 +1,6 @@
-import 'enums.dart';
+import 'departmentInfo.dart';
+
+enum Gender { male, female }
 
 class Student {
   final String firstName;
