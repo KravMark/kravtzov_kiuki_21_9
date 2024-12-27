@@ -13,7 +13,9 @@ class DepartmentsScreen extends ConsumerWidget {
 
     final departmentStudentCounts = {
       for (var department in Department.values)
-        department: students.where((student) => student.department == department).length,
+        department: students == null 
+          ? 0 
+          : students.where((s) => s.department == department).length,
     };
 
     return GridView.builder(

@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/departmentInfo.dart';
 import '../models/studentModel.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/studentsProvider.dart';
 
-class NewStudent extends StatefulWidget {
-  final Student? student;
-  final void Function(Student) onSubmit;
 
+class NewStudent extends ConsumerStatefulWidget {
   const NewStudent({
-    Key? key,
-    this.student,
-    required this.onSubmit,
-  }) : super(key: key);
+    super.key,
+    this.studentIndex
+  });
+
+  final int? studentIndex;
 
   @override
-  State<NewStudent> createState() => _NewStudentState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _NewStudentState();
 }
 
-class _NewStudentState extends State<NewStudent> {
-  late TextEditingController _firstNameController;
-  late TextEditingController _lastNameController;
+class _NewStudentState extends ConsumerState<NewStudent> {
+  TextEditingController _firstNameController = TextEditingController();
+  TextEditingController _lastNameController = TextEditingController();
   Department _selectedDepartment = Department.it;
   Gender _selectedGender = Gender.male;
   int _grade = 1;
@@ -26,11 +27,14 @@ class _NewStudentState extends State<NewStudent> {
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.student?.firstName ?? '');
-    _lastNameController = TextEditingController(text: widget.student?.lastName ?? '');
-    _selectedDepartment = widget.student?.department ?? Department.it;
-    _selectedGender = widget.student?.gender ?? Gender.male;
-    _grade = widget.student?.grade ?? 1;
+    if (widget.studentIndex != null) {
+      final student = ref.read(studentsProvider)![widget.studentIndex!];
+      _firstNameController.text = student.firstName;
+      _lastNameController.text = student.lastName;
+      _grade = student.grade;
+      _selectedGender = student.gender;
+      _selectedDepartment = student.department;
+    }
   }
 
   @override
@@ -40,21 +44,34 @@ class _NewStudentState extends State<NewStudent> {
     super.dispose();
   }
 
-  void _handleSave() {
-    final newStudent = Student(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      department: _selectedDepartment,
-      grade: _grade,
-      gender: _selectedGender,
-    );
-    widget.onSubmit(newStudent);
-    Navigator.of(context).pop();
+  void _handleSave() async {
+    if (widget.studentIndex != null) {
+      await ref.read(studentsProvider.notifier).editStudent(
+            widget.studentIndex!,
+            _firstNameController.text.trim(),
+            _lastNameController.text.trim(),
+            _selectedDepartment,
+            _selectedGender,
+            _grade,
+          );
+    } else {
+      await ref.read(studentsProvider.notifier).addStudent(
+            _firstNameController.text.trim(),
+            _lastNameController.text.trim(),
+            _selectedDepartment,
+            _selectedGender,
+            _grade,
+          );
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); 
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    final notifier = ref.watch(studentsProvider.notifier);
+    Widget myWidget = SingleChildScrollView(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
         left: 16,
@@ -130,5 +147,11 @@ class _NewStudentState extends State<NewStudent> {
         ],
       ),
     );
+    if(notifier.isLoading) {
+      myWidget = const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+    return myWidget;
   }
 }
